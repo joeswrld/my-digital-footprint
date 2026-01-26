@@ -14,7 +14,200 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      account_actions: {
+        Row: {
+          action_type: Database["public"]["Enums"]["action_type"]
+          completed_at: string | null
+          created_at: string
+          discovered_account_id: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["action_status"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["action_type"]
+          completed_at?: string | null
+          created_at?: string
+          discovered_account_id: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["action_status"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["action_type"]
+          completed_at?: string | null
+          created_at?: string
+          discovered_account_id?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["action_status"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_actions_discovered_account_id_fkey"
+            columns: ["discovered_account_id"]
+            isOneToOne: false
+            referencedRelation: "discovered_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discovered_accounts: {
+        Row: {
+          category: Database["public"]["Enums"]["account_category"] | null
+          created_at: string
+          domain: string
+          first_seen: string
+          id: string
+          last_activity: string | null
+          metadata: Json | null
+          risk_score: Database["public"]["Enums"]["risk_level"] | null
+          service_name: string
+          source: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["account_category"] | null
+          created_at?: string
+          domain: string
+          first_seen: string
+          id?: string
+          last_activity?: string | null
+          metadata?: Json | null
+          risk_score?: Database["public"]["Enums"]["risk_level"] | null
+          service_name: string
+          source?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["account_category"] | null
+          created_at?: string
+          domain?: string
+          first_seen?: string
+          id?: string
+          last_activity?: string | null
+          metadata?: Json | null
+          risk_score?: Database["public"]["Enums"]["risk_level"] | null
+          service_name?: string
+          source?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      oauth_tokens: {
+        Row: {
+          created_at: string
+          encrypted_access_token: string
+          encrypted_refresh_token: string | null
+          id: string
+          provider: string
+          scopes: string[] | null
+          token_expiry: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_access_token: string
+          encrypted_refresh_token?: string | null
+          id?: string
+          provider?: string
+          scopes?: string[] | null
+          token_expiry?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_access_token?: string
+          encrypted_refresh_token?: string | null
+          id?: string
+          provider?: string
+          scopes?: string[] | null
+          token_expiry?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email_verified: boolean | null
+          id: string
+          onboarding_completed: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email_verified?: boolean | null
+          id?: string
+          onboarding_completed?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email_verified?: boolean | null
+          id?: string
+          onboarding_completed?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_metrics: {
+        Row: {
+          accounts_discovered_count: number | null
+          actions_taken_count: number | null
+          created_at: string
+          extension_installed: boolean | null
+          first_action_at: string | null
+          gmail_connected: boolean | null
+          id: string
+          last_active_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accounts_discovered_count?: number | null
+          actions_taken_count?: number | null
+          created_at?: string
+          extension_installed?: boolean | null
+          first_action_at?: string | null
+          gmail_connected?: boolean | null
+          id?: string
+          last_active_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accounts_discovered_count?: number | null
+          actions_taken_count?: number | null
+          created_at?: string
+          extension_installed?: boolean | null
+          first_action_at?: string | null
+          gmail_connected?: boolean | null
+          id?: string
+          last_active_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +216,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      account_category: "social" | "finance" | "shopping" | "saas" | "other"
+      action_status: "pending" | "in_progress" | "completed" | "failed"
+      action_type: "deletion" | "revoke"
+      risk_level: "low" | "medium" | "high"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +346,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_category: ["social", "finance", "shopping", "saas", "other"],
+      action_status: ["pending", "in_progress", "completed", "failed"],
+      action_type: ["deletion", "revoke"],
+      risk_level: ["low", "medium", "high"],
+    },
   },
 } as const
