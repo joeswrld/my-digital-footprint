@@ -8,6 +8,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricsCards } from '@/components/dashboard/MetricsCards';
 import { AccountsList } from '@/components/dashboard/AccountsList';
 import { AddAccountDialog } from '@/components/dashboard/AddAccountDialog';
+import { GmailConnectCard } from '@/components/dashboard/GmailConnectCard';
 import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -37,6 +38,9 @@ const Dashboard = () => {
       
       <main className="container mx-auto px-4 py-8 animate-fade-in">
         <div className="space-y-8">
+          {/* Gmail Connect Card */}
+          <GmailConnectCard />
+          
           {/* Metrics Overview */}
           <MetricsCards
             accountsCount={accounts.length}
