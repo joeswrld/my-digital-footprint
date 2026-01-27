@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { DiscoveredAccount, AccountAction, ActionType } from '@/types/database';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -21,6 +23,7 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
+  ChevronRight,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -126,9 +129,10 @@ export function AccountsList({
             const hasPending = accountActions.some((a) => a.status === 'pending');
 
             return (
-              <div
+              <Link
+                to={`/account/${account.id}`}
                 key={account.id}
-                className="flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                className="flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 group cursor-pointer"
               >
                 {/* Category Icon */}
                 <div className={`rounded-lg p-2.5 ${categoryColors[account.category]}`}>
@@ -165,14 +169,17 @@ export function AccountsList({
 
                 {/* Actions */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
                     <Button variant="ghost" size="icon" disabled={isActionPending}>
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      onClick={() => onRequestAction(account.id, 'deletion')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onRequestAction(account.id, 'deletion');
+                      }}
                       disabled={hasPendingAction(account.id, 'deletion')}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -182,7 +189,10 @@ export function AccountsList({
                       )}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => onRequestAction(account.id, 'revoke')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onRequestAction(account.id, 'revoke');
+                      }}
                       disabled={hasPendingAction(account.id, 'revoke')}
                     >
                       <Ban className="mr-2 h-4 w-4" />
@@ -191,9 +201,14 @@ export function AccountsList({
                         <Clock className="ml-auto h-3 w-3 text-muted-foreground" />
                       )}
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                      <ChevronRight className="mr-2 h-4 w-4" />
+                      View Details
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
+              </Link>
             );
           })}
         </div>
