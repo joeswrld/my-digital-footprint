@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DiscoveredAccount, AccountAction, ActionType } from '@/types/database';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,17 +23,17 @@ import {
   Trash2,
   Ban,
   Clock,
-  AlertTriangle,
-  CheckCircle,
   ChevronRight,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { BatchActionsBar } from './BatchActionsBar';
 
 interface AccountsListProps {
   accounts: DiscoveredAccount[];
   actions: AccountAction[];
   isLoading: boolean;
   onRequestAction: (accountId: string, actionType: ActionType) => void;
+  onBatchAction?: (accountIds: string[], actionType: ActionType) => void;
   isActionPending: boolean;
 }
 
@@ -62,8 +64,54 @@ export function AccountsList({
   actions,
   isLoading,
   onRequestAction,
+  onBatchAction,
   isActionPending,
 }: AccountsListProps) {
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  const toggleSelection = (accountId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newSelected = new Set(selectedAccounts);
+    if (newSelected.has(accountId)) {
+      newSelected.delete(accountId);
+    } else {
+      newSelected.add(accountId);
+    }
+    setSelectedAccounts(newSelected);
+    setIsSelectionMode(newSelected.size > 0);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedAccounts.size === accounts.length) {
+      setSelectedAccounts(new Set());
+      setIsSelectionMode(false);
+    } else {
+      setSelectedAccounts(new Set(accounts.map(a => a.id)));
+      setIsSelectionMode(true);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedAccounts(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleBatchDelete = () => {
+    if (onBatchAction) {
+      onBatchAction(Array.from(selectedAccounts), 'deletion');
+      clearSelection();
+    }
+  };
+
+  const handleBatchRevoke = () => {
+    if (onBatchAction) {
+      onBatchAction(Array.from(selectedAccounts), 'revoke');
+      clearSelection();
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -114,105 +162,145 @@ export function AccountsList({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Accounts</CardTitle>
-        <CardDescription>
-          {accounts.length} account{accounts.length !== 1 ? 's' : ''} discovered
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {accounts.map((account) => {
-            const Icon = categoryIcons[account.category];
-            const accountActions = getAccountActions(account.id);
-            const hasPending = accountActions.some((a) => a.status === 'pending');
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle>Your Accounts</CardTitle>
+            <CardDescription>
+              {accounts.length} account{accounts.length !== 1 ? 's' : ''} discovered
+            </CardDescription>
+          </div>
+          {accounts.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSelectAll}
+            >
+              {selectedAccounts.size === accounts.length ? 'Deselect All' : 'Select All'}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {accounts.map((account) => {
+              const Icon = categoryIcons[account.category];
+              const accountActions = getAccountActions(account.id);
+              const hasPending = accountActions.some((a) => a.status === 'pending');
+              const isSelected = selectedAccounts.has(account.id);
 
-            return (
-              <Link
-                to={`/account/${account.id}`}
-                key={account.id}
-                className="flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 group cursor-pointer"
-              >
-                {/* Category Icon */}
-                <div className={`rounded-lg p-2.5 ${categoryColors[account.category]}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-
-                {/* Account Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium truncate">{account.service_name}</h4>
-                    <Badge variant="outline" className={riskColors[account.risk_score]}>
-                      {account.risk_score}
-                    </Badge>
+              return (
+                <div
+                  key={account.id}
+                  className={`flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 group ${
+                    isSelected ? 'border-primary bg-primary/5' : ''
+                  }`}
+                >
+                  {/* Checkbox */}
+                  <div onClick={(e) => toggleSelection(account.id, e)}>
+                    <Checkbox
+                      checked={isSelected}
+                      className="data-[state=checked]:bg-primary"
+                    />
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {account.domain}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    First seen{' '}
-                    {formatDistanceToNow(new Date(account.first_seen), { addSuffix: true })}
-                    {account.last_activity && (
-                      <> • Last activity {formatDistanceToNow(new Date(account.last_activity), { addSuffix: true })}</>
+
+                  {/* Link wrapper for main content */}
+                  <Link
+                    to={`/account/${account.id}`}
+                    className="flex flex-1 items-center gap-4 cursor-pointer"
+                  >
+                    {/* Category Icon */}
+                    <div className={`rounded-lg p-2.5 ${categoryColors[account.category]}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+
+                    {/* Account Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium truncate">{account.service_name}</h4>
+                        <Badge variant="outline" className={riskColors[account.risk_score]}>
+                          {account.risk_score}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {account.domain}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        First seen{' '}
+                        {formatDistanceToNow(new Date(account.first_seen), { addSuffix: true })}
+                        {account.last_activity && (
+                          <> • Last activity {formatDistanceToNow(new Date(account.last_activity), { addSuffix: true })}</>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Status Badges */}
+                    {hasPending && (
+                      <Badge variant="secondary" className="hidden sm:flex gap-1">
+                        <Clock className="h-3 w-3" />
+                        Pending
+                      </Badge>
                     )}
-                  </p>
+                  </Link>
+
+                  {/* Actions */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                      <Button variant="ghost" size="icon" disabled={isActionPending}>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          onRequestAction(account.id, 'deletion');
+                        }}
+                        disabled={hasPendingAction(account.id, 'deletion')}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Request Deletion
+                        {hasPendingAction(account.id, 'deletion') && (
+                          <Clock className="ml-auto h-3 w-3 text-muted-foreground" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          onRequestAction(account.id, 'revoke');
+                        }}
+                        disabled={hasPendingAction(account.id, 'revoke')}
+                      >
+                        <Ban className="mr-2 h-4 w-4" />
+                        Revoke Access
+                        {hasPendingAction(account.id, 'revoke') && (
+                          <Clock className="ml-auto h-3 w-3 text-muted-foreground" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to={`/account/${account.id}`}>
+                          <ChevronRight className="mr-2 h-4 w-4" />
+                          View Details
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-                {/* Status Badges */}
-                {hasPending && (
-                  <Badge variant="secondary" className="hidden sm:flex gap-1">
-                    <Clock className="h-3 w-3" />
-                    Pending
-                  </Badge>
-                )}
-
-                {/* Actions */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-                    <Button variant="ghost" size="icon" disabled={isActionPending}>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onRequestAction(account.id, 'deletion');
-                      }}
-                      disabled={hasPendingAction(account.id, 'deletion')}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Request Deletion
-                      {hasPendingAction(account.id, 'deletion') && (
-                        <Clock className="ml-auto h-3 w-3 text-muted-foreground" />
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onRequestAction(account.id, 'revoke');
-                      }}
-                      disabled={hasPendingAction(account.id, 'revoke')}
-                    >
-                      <Ban className="mr-2 h-4 w-4" />
-                      Revoke Access
-                      {hasPendingAction(account.id, 'revoke') && (
-                        <Clock className="ml-auto h-3 w-3 text-muted-foreground" />
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                      <ChevronRight className="mr-2 h-4 w-4" />
-                      View Details
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </Link>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+      {/* Batch Actions Bar */}
+      <BatchActionsBar
+        selectedCount={selectedAccounts.size}
+        onDelete={handleBatchDelete}
+        onRevoke={handleBatchRevoke}
+        onClearSelection={clearSelection}
+        isActionPending={isActionPending}
+      />
+    </>
   );
 }

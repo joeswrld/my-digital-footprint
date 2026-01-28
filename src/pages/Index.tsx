@@ -1,15 +1,10 @@
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Shield, Globe, Trash2, Lock, ArrowRight, CheckCircle } from 'lucide-react';
+import { Shield, Globe, Trash2, Lock, ArrowRight, CheckCircle, LayoutDashboard, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Index = () => {
   const { user, loading } = useAuth();
-
-  if (!loading && user) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,9 +16,20 @@ const Index = () => {
           </div>
           <span className="text-xl font-bold">FixSense</span>
         </div>
-        <Link to="/auth">
-          <Button>Sign In</Button>
-        </Link>
+        {loading ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : user ? (
+          <Link to="/dashboard">
+            <Button>
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
+          </Link>
+        ) : (
+          <Link to="/auth">
+            <Button>Sign In</Button>
+          </Link>
+        )}
       </header>
 
       {/* Hero */}
@@ -38,12 +44,21 @@ const Index = () => {
             Request account deletion. Revoke access. Regain control.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link to="/auth">
-              <Button size="lg" className="gap-2">
-                Get Started Free
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            {user ? (
+              <Link to="/dashboard">
+                <Button size="lg" className="gap-2">
+                  Go to Dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth">
+                <Button size="lg" className="gap-2">
+                  Get Started Free
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
             <p className="text-sm text-muted-foreground">
               No credit card required
             </p>
