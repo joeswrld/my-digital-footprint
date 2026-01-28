@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FixSense</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f10;
+      color: #ffffff;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .header p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    
+    .content {
+      padding: 16px;
+    }
+    
+    .status {
+      background: #1a1a1e;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .status-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .status-label {
+      font-size: 13px;
+      color: #888;
+    }
+    
+    .status-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .status-value.connected {
+      color: #22c55e;
+    }
+    
+    .status-value.disconnected {
+      color: #ef4444;
+    }
+    
+    .pending-section {
+      margin-bottom: 16px;
+    }
+    
+    .pending-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .pending-list {
+      background: #1a1a1e;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .pending-item {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2a2a2e;
+    }
+    
+    .pending-item:last-child {
+      border-bottom: none;
+    }
+    
+    .pending-domain {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .pending-time {
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .sync-btn {
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .sync-btn:hover {
+      background: #5558e3;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: #666;
+      font-size: 13px;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      text-decoration: none;
+    }
+    
+    .btn-primary {
+      background: #6366f1;
+      color: white;
+      border: none;
+    }
+    
+    .btn-primary:hover {
+      background: #5558e3;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: #6366f1;
+      border: 1px solid #6366f1;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .login-prompt {
+      background: #1a1a1e;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    
+    .login-prompt p {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <div>
+      <h1>FixSense</h1>
+      <p>Signup Detector</p>
+    </div>
+  </div>
+  
+  <div class="content">
+    <div class="status">
+      <div class="status-row">
+        <span class="status-label">Connection</span>
+        <span class="status-value" id="connection-status">Checking...</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Pending syncs</span>
+        <span class="status-value" id="pending-count">0</span>
+      </div>
+    </div>
+    
+    <div id="logged-out-view" style="display: none;">
+      <div class="login-prompt">
+        <p>Sign in to FixSense to sync detected signups to your dashboard.</p>
+        <a href="https://id-preview--2f697cd2-a600-461c-b2da-a0a6a32536ac.lovable.app/auth" target="_blank" class="btn btn-primary">Sign In</a>
+      </div>
+    </div>
+    
+    <div id="logged-in-view" style="display: none;">
+      <div class="pending-section">
+        <div class="pending-title">Pending Signups</div>
+        <div class="pending-list" id="pending-list">
+          <div class="empty-state">No pending signups detected</div>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <a href="https://id-preview--2f697cd2-a600-461c-b2da-a0a6a32536ac.lovable.app/dashboard" target="_blank" class="btn btn-primary">Open Dashboard</a>
+        <button class="btn btn-secondary" id="sync-all-btn">Sync All</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
