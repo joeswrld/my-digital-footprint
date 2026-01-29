@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import AccountDetails from "./pages/AccountDetails";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
+import Footprint from "./pages/Footprint";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
                 <Route path="/account/:id" element={<AccountDetails />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/footprint" element={<Footprint />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -6,12 +6,11 @@ import { useActions } from '@/hooks/useActions';
 import { useMetrics } from '@/hooks/useMetrics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from '@/components/ui/chart';
 import {
   BarChart,
@@ -22,14 +21,13 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
-  ResponsiveContainer,
   AreaChart,
   Area,
 } from 'recharts';
 import { ArrowLeft, TrendingUp, PieChartIcon, Activity, Loader2 } from 'lucide-react';
 import { format, subDays, startOfDay } from 'date-fns';
+import { ChartSkeleton } from '@/components/analytics/ChartSkeleton';
+import { EmptyState } from '@/components/analytics/EmptyState';
 
 const CATEGORY_COLORS: Record<string, string> = {
   social: 'hsl(217, 91%, 60%)',
@@ -173,8 +171,78 @@ const Analytics = () => {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Loading Skeleton for Discovery Trend */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-72 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <ChartSkeleton type="area" height="h-[300px]" />
+              </CardContent>
+            </Card>
+
+            {/* Loading Skeleton for Category Distribution */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-4 w-56 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <ChartSkeleton type="pie" />
+              </CardContent>
+            </Card>
+
+            {/* Loading Skeleton for Risk Distribution */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-36" />
+                <Skeleton className="h-4 w-48 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <ChartSkeleton type="horizontal-bar" />
+              </CardContent>
+            </Card>
+
+            {/* Loading Skeleton for Action Status */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-64 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <ChartSkeleton type="pie" />
+              </CardContent>
+            </Card>
+
+            {/* Loading Skeleton for Action Types */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-28" />
+                <Skeleton className="h-4 w-44 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <ChartSkeleton type="bar" />
+              </CardContent>
+            </Card>
+
+            {/* Loading Skeleton for Summary Stats */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="rounded-lg border p-4">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-9 w-16 mt-2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
@@ -232,9 +300,7 @@ const Analytics = () => {
               </CardHeader>
               <CardContent>
                 {categoryData.length === 0 ? (
-                  <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-                    No accounts discovered yet
-                  </div>
+                  <EmptyState type="category" />
                 ) : (
                   <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <PieChart>
@@ -270,9 +336,7 @@ const Analytics = () => {
               </CardHeader>
               <CardContent>
                 {riskData.every((d) => d.value === 0) ? (
-                  <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-                    No risk data available
-                  </div>
+                  <EmptyState type="risk" />
                 ) : (
                   <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <BarChart data={riskData} layout="vertical">
@@ -308,9 +372,7 @@ const Analytics = () => {
               </CardHeader>
               <CardContent>
                 {actions?.length === 0 ? (
-                  <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-                    No actions taken yet
-                  </div>
+                  <EmptyState type="actions" />
                 ) : (
                   <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <PieChart>
@@ -344,9 +406,7 @@ const Analytics = () => {
               </CardHeader>
               <CardContent>
                 {actions?.length === 0 ? (
-                  <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-                    No actions taken yet
-                  </div>
+                  <EmptyState type="actions" />
                 ) : (
                   <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <BarChart data={actionTypeData}>
