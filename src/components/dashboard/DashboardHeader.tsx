@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Shield, Plus, LogOut, User, Settings } from 'lucide-react';
+import { Shield, Plus, LogOut, User, Settings, BarChart3 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,12 +57,17 @@ export function DashboardHeader({ onAddAccount }: DashboardHeaderProps) {
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
+                <Link to="/analytics">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Analytics
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/settings">
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
