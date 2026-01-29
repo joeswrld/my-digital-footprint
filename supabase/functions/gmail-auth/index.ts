@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
-    // Handle OAuth callback
-    if (action === "callback") {
+    // Handle OAuth callback - Google redirects to base URL, we detect callback by presence of 'code' param
+    if (url.searchParams.has("code")) {
       const code = url.searchParams.get("code");
       const state = url.searchParams.get("state");
 
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       const stateData = JSON.parse(atob(state));
       const { user_id, redirect_uri } = stateData;
 
-      // Exchange code for tokens
+      // Exchange code for tokens - redirect_uri must match exactly what's in Google Console (no query params)
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
           code,
           client_id: GOOGLE_CLIENT_ID,
           client_secret: GOOGLE_CLIENT_SECRET,
-          redirect_uri: `${SUPABASE_URL}/functions/v1/gmail-auth?action=callback`,
+          redirect_uri: `${SUPABASE_URL}/functions/v1/gmail-auth`,
           grant_type: "authorization_code",
         }),
       });
@@ -126,12 +126,12 @@ Deno.serve(async (req) => {
     // Create state with user info
     const state = btoa(JSON.stringify({ user_id: userId, redirect_uri: redirectUri }));
 
-    // Build Google OAuth URL
+    // Build Google OAuth URL - redirect_uri must NOT have query params to match Google Console config
     const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     googleAuthUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID);
     googleAuthUrl.searchParams.set(
       "redirect_uri",
-      `${SUPABASE_URL}/functions/v1/gmail-auth?action=callback`
+      `${SUPABASE_URL}/functions/v1/gmail-auth`
     );
     googleAuthUrl.searchParams.set("response_type", "code");
     googleAuthUrl.searchParams.set(

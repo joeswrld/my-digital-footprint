@@ -148,3 +148,40 @@
     @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
 }
+
+/* Layout density variations */
+.density-compact {
+  --spacing-multiplier: 0.85;
+}
+
+.density-compact .container {
+  @apply px-3 py-4;
+}
+
+.density-compact .space-y-6 {
+  @apply space-y-4;
+}
+
+.density-compact .gap-6 {
+  @apply gap-4;
+}
+
+.density-comfortable {
+  --spacing-multiplier: 1;
+}
+
+.density-spacious {
+  --spacing-multiplier: 1.15;
+}
+
+.density-spacious .container {
+  @apply px-6 py-10;
+}
+
+.density-spacious .space-y-6 {
+  @apply space-y-8;
+}
+
+.density-spacious .gap-6 {
+  @apply gap-8;
+}

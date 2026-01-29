@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useGmailConnect } from '@/hooks/useGmailConnect';
+import { useTheme } from '@/components/ThemeProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   ArrowLeft,
   Shield,
   Mail,
@@ -34,14 +42,35 @@ import {
   Lock,
   Loader2,
   Settings as SettingsIcon,
+  Sun,
+  Moon,
+  Monitor,
+  Palette,
+  LayoutGrid,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
+
+const ACCENT_OPTIONS = [
+  { value: 'teal', label: 'Teal', color: 'bg-[hsl(173,58%,39%)]' },
+  { value: 'blue', label: 'Blue', color: 'bg-[hsl(217,91%,60%)]' },
+  { value: 'purple', label: 'Purple', color: 'bg-[hsl(262,83%,58%)]' },
+  { value: 'rose', label: 'Rose', color: 'bg-[hsl(346,77%,50%)]' },
+  { value: 'amber', label: 'Amber', color: 'bg-[hsl(38,92%,50%)]' },
+] as const;
+
+const DENSITY_OPTIONS = [
+  { value: 'compact', label: 'Compact', description: 'Tighter spacing' },
+  { value: 'comfortable', label: 'Comfortable', description: 'Default spacing' },
+  { value: 'spacious', label: 'Spacious', description: 'More breathing room' },
+] as const;
 
 const Settings = () => {
   const { user, profile, loading: authLoading, signOut } = useAuth();
   const { metrics } = useMetrics();
   const { connectGmail, scanEmails, isConnecting, isScanning } = useGmailConnect();
+  const { theme, setTheme, accentColor, setAccentColor, layoutDensity, setLayoutDensity } = useTheme();
   const queryClient = useQueryClient();
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [privacySettings, setPrivacySettings] = useState({
@@ -65,7 +94,6 @@ const Settings = () => {
   const handleDisconnectGmail = async () => {
     setIsDisconnecting(true);
     try {
-      // Delete OAuth tokens
       const { error } = await supabase
         .from('oauth_tokens')
         .delete()
@@ -74,7 +102,6 @@ const Settings = () => {
 
       if (error) throw error;
 
-      // Update metrics
       await supabase
         .from('user_metrics')
         .update({ gmail_connected: false })
@@ -107,11 +134,106 @@ const Settings = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Settings</h1>
-            <p className="text-muted-foreground">Manage your account and privacy preferences</p>
+            <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
         </div>
 
         <div className="space-y-6">
+          {/* Appearance Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Appearance
+              </CardTitle>
+              <CardDescription>Customize how FixSense looks and feels</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Theme Toggle */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Theme</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={theme === 'light' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('light')}
+                    className="flex-1"
+                  >
+                    <Sun className="mr-2 h-4 w-4" />
+                    Light
+                  </Button>
+                  <Button
+                    variant={theme === 'dark' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('dark')}
+                    className="flex-1"
+                  >
+                    <Moon className="mr-2 h-4 w-4" />
+                    Dark
+                  </Button>
+                  <Button
+                    variant={theme === 'system' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('system')}
+                    className="flex-1"
+                  >
+                    <Monitor className="mr-2 h-4 w-4" />
+                    System
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Accent Color */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Accent Color</Label>
+                <div className="flex flex-wrap gap-2">
+                  {ACCENT_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setAccentColor(option.value)}
+                      className={cn(
+                        'flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
+                        accentColor === option.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      )}
+                    >
+                      <div className={cn('h-4 w-4 rounded-full', option.color)} />
+                      <span className="text-sm">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Layout Density */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Layout Density</Label>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {DENSITY_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setLayoutDensity(option.value)}
+                      className={cn(
+                        'flex flex-col items-start rounded-lg border p-3 text-left transition-colors',
+                        layoutDensity === option.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      )}
+                    >
+                      <LayoutGrid className="mb-1 h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{option.label}</span>
+                      <span className="text-xs text-muted-foreground">{option.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Profile Section */}
           <Card>
             <CardHeader>
@@ -136,9 +258,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Email Verified</p>
-                  <p className="text-sm text-muted-foreground">
-                    Your email verification status
-                  </p>
+                  <p className="text-sm text-muted-foreground">Your email verification status</p>
                 </div>
                 {profile?.email_verified ? (
                   <Badge className="bg-success/10 text-success hover:bg-success/20">
@@ -365,9 +485,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Export Your Data</p>
-                  <p className="text-sm text-muted-foreground">
-                    Download all your account data
-                  </p>
+                  <p className="text-sm text-muted-foreground">Download all your account data</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Export
@@ -392,8 +510,8 @@ const Settings = () => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete your account?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your
-                        account, all discovered accounts, and all associated data.
+                        This action cannot be undone. This will permanently delete your account,
+                        all discovered accounts, and all associated data.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
