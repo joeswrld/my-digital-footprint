@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     // Search for typical registration/signup emails
     const query = "subject:(welcome OR verify OR confirm OR registration OR activate)";
     const messagesResponse = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&q=${encodeURIComponent(query)}`,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10000000&q=${encodeURIComponent(query)}`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }

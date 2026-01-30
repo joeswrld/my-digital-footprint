@@ -11,8 +11,8 @@ const Index = () => {
       {/* Header */}
       <header className="container mx-auto flex items-center justify-between px-4 py-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Shield className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-9 w-9 items-center justify-center ">
+          <img src="/android-chrome-512x512.png" alt="FixSense Logo" className="w-8 h-8 rounded-lg" />
           </div>
           <span className="text-xl font-bold">FixSense</span>
         </div>

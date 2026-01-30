@@ -88,7 +88,7 @@ const Auth = () => {
         {/* Logo & Branding */}
         <div className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-            <Shield className="h-8 w-8 text-primary-foreground" />
+          <img src="/android-chrome-512x512.png" alt="FixSense Logo" className="w-8 h-8 rounded-lg" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">FixSense</h1>
           <p className="mt-2 text-muted-foreground">

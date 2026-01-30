@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
               </p>
             </div>
             <div style="text-align: center; margin-top: 30px;">
-              <a href="https://fixsense.app/dashboard" style="display: inline-block; background: #1a1a2e; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
+              <a href="https://fixsense.com.ng/dashboard" style="display: inline-block; background: #1a1a2e; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
                 View Dashboard
               </a>
             </div>
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
               </p>
             </div>
             <div style="text-align: center; margin-top: 30px;">
-              <a href="https://fixsense.app/dashboard" style="display: inline-block; background: #ef4444; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
+              <a href="https://fixsense.com.ng/dashboard" style="display: inline-block; background: #ef4444; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
                 Review Account
               </a>
             </div>
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
               </p>
             </div>
             <div style="text-align: center; margin-top: 30px;">
-              <a href="https://fixsense.app/dashboard" style="display: inline-block; background: #1a1a2e; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
+              <a href="https://fixsense.com.ng/dashboard" style="display: inline-block; background: #1a1a2e; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
                 View Dashboard
               </a>
             </div>
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
     // Send email via Resend
     // Note: Replace 'noreply@your-verified-domain.com' with your verified Resend domain
     const emailResponse = await resend.emails.send({
-      from: "FixSense <noreply@updates.fixsense.app>",
+      from: "FixSense <noreply@fixsense.com.ng>",
       to: [userEmail],
       subject,
       html: htmlContent,
