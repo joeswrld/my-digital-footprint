@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Shield, Plus, LogOut, User, Settings, BarChart3 } from 'lucide-react';
+import { Shield, Plus, LogOut, User, Settings, BarChart3, Fingerprint } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +56,12 @@ export function DashboardHeader({ onAddAccount }: DashboardHeaderProps) {
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/footprint">
+                  <Fingerprint className="mr-2 h-4 w-4" />
+                  Digital Footprint
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/analytics">
                   <BarChart3 className="mr-2 h-4 w-4" />
