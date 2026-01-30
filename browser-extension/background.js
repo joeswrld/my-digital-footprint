@@ -383,21 +383,48 @@ function extractServiceName(domain) {
 // INITIALIZATION
 // =====================
 
-chrome.storage.local.get(['pendingSignups'], (result) => {
-  if (result.pendingSignups) {
-    pendingSignups = result.pendingSignups;
-  }
-});
-
-// Set up alarm for periodic sync (Level 1 - Silent automation)
-chrome.alarms.create('periodicSync', { periodInMinutes: 60 });
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'periodicSync') {
-    console.log('[FixSense] Running periodic sync');
+// Initialize extension when service worker starts
+async function initialize() {
+  try {
+    console.log('[FixSense] Initializing service worker...');
     
-    for (const signup of pendingSignups.filter(s => s.confirmed)) {
-      await syncSignupToFixSense(signup);
+    // Load pending signups from storage
+    const result = await chrome.storage.local.get(['pendingSignups']);
+    if (result.pendingSignups) {
+      pendingSignups = result.pendingSignups;
+      console.log('[FixSense] Loaded', pendingSignups.length, 'pending signups');
     }
+    
+    // Set up alarm for periodic sync (Level 1 - Silent automation)
+    // Check if chrome.alarms is available
+    if (chrome.alarms) {
+      // Clear any existing alarm first
+      await chrome.alarms.clear('periodicSync');
+      // Create new alarm
+      await chrome.alarms.create('periodicSync', { periodInMinutes: 60 });
+      console.log('[FixSense] Periodic sync alarm created');
+    } else {
+      console.warn('[FixSense] chrome.alarms API not available');
+    }
+    
+    console.log('[FixSense] Initialization complete');
+  } catch (error) {
+    console.error('[FixSense] Initialization error:', error);
   }
-});
+}
+
+// Handle alarm events
+if (chrome.alarms) {
+  chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (alarm.name === 'periodicSync') {
+      console.log('[FixSense] Running periodic sync');
+      
+      for (const signup of pendingSignups.filter(s => s.confirmed)) {
+        await syncSignupToFixSense(signup);
+      }
+    }
+  });
+}
+
+// Run initialization
+initialize();
