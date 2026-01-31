@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RealtimeProvider } from "@/components/dashboard/RealtimeProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ExtensionAuthBridge } from "@/components/extension/ExtensionAuthBridge";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -14,7 +15,6 @@ import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import Footprint from "./pages/Footprint";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -23,6 +23,7 @@ const App = () => (
       <AuthProvider>
         <RealtimeProvider>
           <TooltipProvider>
+            <ExtensionAuthBridge />
             <Toaster />
             <Sonner />
             <BrowserRouter>
