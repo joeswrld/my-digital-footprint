@@ -1,7 +1,19 @@
 // FixSense Background Service Worker
-// Handles signup detection, syncing, and automation orchestration
+// Handles signup detection, syncing, auth state, and automation orchestration
 
 const FIXSENSE_API_URL = 'https://gsvkwedgiwwvnroghbzr.supabase.co/functions/v1';
+
+// =====================
+// AUTH STATE
+// =====================
+let authState = {
+  isAuthenticated: false,
+  accessToken: null,
+  userId: null,
+  email: null,
+  expiresAt: null,
+  lastUpdated: null
+};
 
 // =====================
 // AUTOMATION LEVELS
@@ -88,27 +100,108 @@ let pendingSignups = [];
 let activeActions = [];
 
 // =====================
+// AUTH MESSAGE HANDLERS
+// =====================
+
+function handleAuthStateUpdate(payload) {
+  const previousState = authState.isAuthenticated;
+  
+  authState = {
+    isAuthenticated: payload.isAuthenticated,
+    accessToken: payload.accessToken,
+    userId: payload.userId,
+    email: payload.email,
+    expiresAt: payload.expiresAt,
+    lastUpdated: Date.now()
+  };
+  
+  // Store in chrome.storage for persistence
+  chrome.storage.local.set({ 
+    authState,
+    // Keep authToken for backward compatibility
+    authToken: payload.accessToken
+  });
+  
+  console.log('[FixSense] Auth state updated:', {
+    isAuthenticated: authState.isAuthenticated,
+    email: authState.email
+  });
+  
+  // If we just logged in, sync any pending signups
+  if (!previousState && authState.isAuthenticated) {
+    console.log('[FixSense] User logged in, syncing pending signups...');
+    syncPendingSignups();
+  }
+  
+  // If we logged out, clear sensitive data
+  if (previousState && !authState.isAuthenticated) {
+    console.log('[FixSense] User logged out, clearing sensitive data');
+    authState.accessToken = null;
+    authState.userId = null;
+    chrome.storage.local.remove(['authToken']);
+  }
+}
+
+function isTokenExpired() {
+  if (!authState.expiresAt) return true;
+  // Add 60 second buffer
+  return Date.now() / 1000 > authState.expiresAt - 60;
+}
+
+async function syncPendingSignups() {
+  if (!authState.isAuthenticated || !authState.accessToken) return;
+  
+  const confirmedSignups = pendingSignups.filter(s => s.confirmed);
+  
+  for (const signup of confirmedSignups) {
+    await syncSignupToFixSense(signup);
+  }
+}
+
+// =====================
 // MESSAGE LISTENERS
 // =====================
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
+    // Auth state from dashboard via content script
+    case 'AUTH_STATE_UPDATE':
+      handleAuthStateUpdate(message.payload);
+      sendResponse({ success: true });
+      break;
+    
+    // Get current auth status
+    case 'GET_AUTH_STATUS':
+      sendResponse({
+        isAuthenticated: authState.isAuthenticated,
+        email: authState.email,
+        isExpired: isTokenExpired()
+      });
+      break;
+    
     case 'SIGNUP_CONFIRMED':
       handleConfirmedSignup(message.data);
       sendResponse({ success: true });
       break;
       
     case 'GET_AUTH_TOKEN':
-      chrome.storage.local.get(['authToken'], (result) => {
-        sendResponse({ token: result.authToken });
+      sendResponse({ 
+        token: authState.accessToken,
+        isAuthenticated: authState.isAuthenticated 
       });
-      return true;
+      break;
       
     case 'SET_AUTH_TOKEN':
-      chrome.storage.local.set({ authToken: message.token }, () => {
-        sendResponse({ success: true });
+      // Legacy support - update auth state
+      handleAuthStateUpdate({
+        isAuthenticated: !!message.token,
+        accessToken: message.token,
+        userId: null,
+        email: null,
+        expiresAt: null
       });
-      return true;
+      sendResponse({ success: true });
+      break;
       
     case 'GET_PENDING_SIGNUPS':
       sendResponse({ signups: pendingSignups });
@@ -121,8 +214,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       
     // Automation level handlers
     case 'INITIATE_ACTION':
-      handleActionInitiation(message.action, sender.tab?.id);
-      sendResponse({ success: true });
+      if (!authState.isAuthenticated) {
+        sendResponse({ success: false, error: 'Not authenticated' });
+      } else {
+        handleActionInitiation(message.action, sender.tab?.id);
+        sendResponse({ success: true });
+      }
       break;
       
     case 'GET_AUTOMATION_LEVEL':
@@ -134,7 +231,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       updateActionStatus(message.actionId, message.status);
       sendResponse({ success: true });
       break;
+      
+    // Logout
+    case 'LOGOUT':
+      handleAuthStateUpdate({
+        isAuthenticated: false,
+        accessToken: null,
+        userId: null,
+        email: null,
+        expiresAt: null
+      });
+      sendResponse({ success: true });
+      break;
   }
+  
+  return true; // Keep channel open for async responses
 });
 
 // =====================
@@ -142,6 +253,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // =====================
 
 chrome.webNavigation.onCompleted.addListener(async (details) => {
+  // Only process if authenticated
+  if (!authState.isAuthenticated) {
+    return;
+  }
+  
   if (details.frameId !== 0) return;
   
   const url = new URL(details.url);
@@ -193,6 +309,11 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
 // =====================
 
 async function handleActionInitiation(action, tabId) {
+  if (!authState.isAuthenticated) {
+    console.log('[FixSense] Action blocked - not authenticated');
+    return;
+  }
+  
   const { domain, actionType, accountId } = action;
   const level = getAutomationLevel(domain);
   
@@ -297,10 +418,13 @@ async function handleConfirmedSignup(data) {
 
 async function syncSignupToFixSense(signup) {
   try {
-    const { authToken } = await chrome.storage.local.get(['authToken']);
-    
-    if (!authToken) {
+    if (!authState.isAuthenticated || !authState.accessToken) {
       console.log('[FixSense] Not logged in, storing for later sync');
+      return;
+    }
+    
+    if (isTokenExpired()) {
+      console.log('[FixSense] Token expired, waiting for refresh');
       return;
     }
     
@@ -308,7 +432,7 @@ async function syncSignupToFixSense(signup) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
+        'Authorization': `Bearer ${authState.accessToken}`
       },
       body: JSON.stringify({
         domain: signup.domain,
@@ -322,6 +446,16 @@ async function syncSignupToFixSense(signup) {
       pendingSignups = pendingSignups.filter(s => s.domain !== signup.domain);
       await chrome.storage.local.set({ pendingSignups });
       console.log('[FixSense] Synced signup:', signup.domain);
+    } else if (response.status === 401) {
+      // Token invalid, clear auth state
+      console.log('[FixSense] Auth token rejected, clearing state');
+      handleAuthStateUpdate({
+        isAuthenticated: false,
+        accessToken: null,
+        userId: null,
+        email: null,
+        expiresAt: null
+      });
     }
   } catch (error) {
     console.error('[FixSense] Sync failed:', error);
@@ -330,16 +464,14 @@ async function syncSignupToFixSense(signup) {
 
 async function updateActionStatus(actionId, status) {
   try {
-    const { authToken } = await chrome.storage.local.get(['authToken']);
-    
-    if (!authToken) return;
+    if (!authState.isAuthenticated || !authState.accessToken) return;
     
     // Update action status on server
     await fetch(`${FIXSENSE_API_URL}/extension-sync`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
+        'Authorization': `Bearer ${authState.accessToken}`
       },
       body: JSON.stringify({
         type: 'action_update',
@@ -388,23 +520,32 @@ async function initialize() {
   try {
     console.log('[FixSense] Initializing service worker...');
     
+    // Load auth state from storage
+    const storedAuth = await chrome.storage.local.get(['authState', 'authToken', 'pendingSignups']);
+    
+    if (storedAuth.authState) {
+      authState = storedAuth.authState;
+      console.log('[FixSense] Restored auth state:', {
+        isAuthenticated: authState.isAuthenticated,
+        email: authState.email
+      });
+    } else if (storedAuth.authToken) {
+      // Legacy migration
+      authState.isAuthenticated = true;
+      authState.accessToken = storedAuth.authToken;
+    }
+    
     // Load pending signups from storage
-    const result = await chrome.storage.local.get(['pendingSignups']);
-    if (result.pendingSignups) {
-      pendingSignups = result.pendingSignups;
+    if (storedAuth.pendingSignups) {
+      pendingSignups = storedAuth.pendingSignups;
       console.log('[FixSense] Loaded', pendingSignups.length, 'pending signups');
     }
     
     // Set up alarm for periodic sync (Level 1 - Silent automation)
-    // Check if chrome.alarms is available
     if (chrome.alarms) {
-      // Clear any existing alarm first
       await chrome.alarms.clear('periodicSync');
-      // Create new alarm
       await chrome.alarms.create('periodicSync', { periodInMinutes: 60 });
       console.log('[FixSense] Periodic sync alarm created');
-    } else {
-      console.warn('[FixSense] chrome.alarms API not available');
     }
     
     console.log('[FixSense] Initialization complete');
@@ -419,8 +560,10 @@ if (chrome.alarms) {
     if (alarm.name === 'periodicSync') {
       console.log('[FixSense] Running periodic sync');
       
-      for (const signup of pendingSignups.filter(s => s.confirmed)) {
-        await syncSignupToFixSense(signup);
+      if (authState.isAuthenticated && !isTokenExpired()) {
+        for (const signup of pendingSignups.filter(s => s.confirmed)) {
+          await syncSignupToFixSense(signup);
+        }
       }
     }
   });
